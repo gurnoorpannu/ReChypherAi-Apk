@@ -7,41 +7,41 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.Header
 import retrofit2.http.POST
-import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
-// Gemini API request/response models
-data class GeminiRequest(
-    val contents: List<GeminiContent>
+// Grok API uses OpenAI-compatible format
+data class GrokRequest(
+    val messages: List<GrokMessage>,
+    val model: String = "grok-beta",
+    val stream: Boolean = false,
+    val temperature: Double = 0.7
 )
 
-data class GeminiContent(
-    val parts: List<GeminiPart>
+data class GrokMessage(
+    val role: String,
+    val content: String
 )
 
-data class GeminiPart(
-    val text: String
+data class GrokResponse(
+    val choices: List<GrokChoice>?
 )
 
-data class GeminiResponse(
-    val candidates: List<GeminiCandidate>?
-)
-
-data class GeminiCandidate(
-    val content: GeminiContent?,
-    @SerializedName("finishReason") val finishReason: String?
+data class GrokChoice(
+    val message: GrokMessage?,
+    @SerializedName("finish_reason") val finishReason: String?
 )
 
 interface GeminiApiService {
-    @POST("v1beta/models/gemini-pro:generateContent")
+    @POST("v1/chat/completions")
     suspend fun generateContent(
-        @Query("key") apiKey: String,
-        @Body request: GeminiRequest
-    ): Response<GeminiResponse>
+        @Header("Authorization") authorization: String,
+        @Body request: GrokRequest
+    ): Response<GrokResponse>
     
     companion object {
-        private const val BASE_URL = "https://generativelanguage.googleapis.com/"
+        private const val BASE_URL = "https://api.x.ai/"
         
         fun create(): GeminiApiService {
             val logging = HttpLoggingInterceptor().apply {

@@ -14,7 +14,7 @@ data class ChatMessage(
 
 class ChatViewModel : ViewModel() {
     private val apiService = GeminiApiService.create()
-    private val apiKey = "AIzaSyCEpS6GrFmRZq0QzaM3mYGjIQ1RiNkB5r8"
+    private val apiKey = "xai-Dki8Qol8CBYF2PFkTRzgJk5RgSwhmk8BBHduVywCwY8vUdCSUQnG95Yn4UgcZuZLiIsrm6hSySjwdb4mtry"
     
     val messages = mutableStateListOf<ChatMessage>()
     var isLoading = false
@@ -49,26 +49,27 @@ class ChatViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                val systemPrompt = "You are a helpful waste management assistant. " +
-                        "Only answer questions related to waste, recycling, trash disposal, " +
-                        "composting, and environmental sustainability. " +
-                        "If the question is not related to these topics, politely decline."
-                
-                val request = GeminiRequest(
-                    contents = listOf(
-                        GeminiContent(
-                            parts = listOf(
-                                GeminiPart(text = "$systemPrompt\n\nUser: $userMessage")
-                            )
+                val request = GrokRequest(
+                    messages = listOf(
+                        GrokMessage(
+                            role = "system",
+                            content = "You are a helpful waste management assistant. " +
+                                    "Only answer questions related to waste, recycling, trash disposal, " +
+                                    "composting, and environmental sustainability. " +
+                                    "If the question is not related to these topics, politely decline."
+                        ),
+                        GrokMessage(
+                            role = "user",
+                            content = userMessage
                         )
                     )
                 )
                 
-                val response = apiService.generateContent(apiKey, request)
+                val response = apiService.generateContent("Bearer $apiKey", request)
                 
                 if (response.isSuccessful) {
-                    val aiResponse = response.body()?.candidates?.firstOrNull()
-                        ?.content?.parts?.firstOrNull()?.text
+                    val aiResponse = response.body()?.choices?.firstOrNull()
+                        ?.message?.content
                         ?: "Sorry, I couldn't generate a response."
                     
                     messages.add(ChatMessage(aiResponse, false))
