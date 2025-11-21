@@ -71,12 +71,12 @@ fun BottomNavBar(
             )
 
 
-            // Profile Icon
-            NavItem(
-                icon = Icons.Default.Person,
-                label = "Profile",
-                isSelected = selectedItem == 4,
-                onClick = { onItemSelected(4) }
+            // Chatbot Icon
+            NavItemImage(
+                imageRes = R.drawable.chatbot,
+                label = "Chatbot",
+                isSelected = selectedItem == 3,
+                onClick = { onItemSelected(3) }
             )
         }
         }
