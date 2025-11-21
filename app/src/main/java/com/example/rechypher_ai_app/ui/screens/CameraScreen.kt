@@ -27,10 +27,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.example.rechypher_ai_app.R
 import com.example.rechypher_ai_app.ml.WasteClassifier
 import com.example.rechypher_ai_app.ui.functions.CarbonImpactCard
 import com.example.rechypher_ai_app.ui.theme.DarkGreen
@@ -76,36 +78,9 @@ fun CameraScreen(
         }
     }
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        "Scan Waste",
-                        color = White
-                    ) 
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = PrimaryGreen,
-                    titleContentColor = White
-                )
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
             if (capturedImage == null) {
                 // Camera Preview
                 if (hasCameraPermission) {
@@ -291,7 +266,6 @@ fun CameraScreen(
             }
         }
     }
-}
 
 @Composable
 fun CameraPreview(
@@ -340,7 +314,7 @@ fun CameraPreview(
             modifier = Modifier.fillMaxSize()
         )
         
-        // Capture button
+        // Capture button with camera icon
         FloatingActionButton(
             onClick = {
                 imageCapture?.let { capture ->
@@ -366,15 +340,21 @@ fun CameraPreview(
                 .padding(32.dp)
                 .size(72.dp),
             containerColor = White,
-            contentColor = White
+            contentColor = PrimaryGreen
         ) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .border(4.dp, PrimaryGreen, CircleShape)
-                    .padding(4.dp)
-                    .background(PrimaryGreen, CircleShape)
-            )
+                    .size(64.dp)
+                    .border(3.dp, PrimaryGreen, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.camera),
+                    contentDescription = "Capture",
+                    tint = PrimaryGreen,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
         }
     }
     

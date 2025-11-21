@@ -11,7 +11,6 @@ import com.example.rechypher_ai_app.ui.theme.ReChypherAiAppTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             ReChypherAiAppTheme {
                 MainScreen()

@@ -5,7 +5,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
@@ -14,7 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -40,45 +46,13 @@ fun ChatbotScreen(
         }
     }
     
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color.White
+    val keyboardController = LocalSoftwareKeyboardController.current
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Header
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            "Waste Assistant",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            "Ask me about waste management",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onClose) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = Color(0xFF7BA589)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color(0xFF7BA589)
-                )
-            )
-            
-            Divider(color = Color(0xFFE0E0E0))
             
             // Messages
             LazyColumn(
@@ -107,27 +81,43 @@ fun ChatbotScreen(
                 }
             }
             
-            Divider(color = Color(0xFFE0E0E0))
-            
             // Input field
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
                     .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Bottom
             ) {
                 OutlinedTextField(
                     value = messageText,
-                    onValueChange = { messageText = it },
-                    modifier = Modifier.weight(1f),
+                    onValueChange = { 
+                        if (it.length <= 500) { // Limit text length
+                            messageText = it 
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 56.dp, max = 120.dp),
                     placeholder = { Text("Ask about waste management...") },
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF7BA589),
                         unfocusedBorderColor = Color(0xFFE0E0E0)
                     ),
-                    maxLines = 3
+                    maxLines = 4,
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Send
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSend = {
+                            if (messageText.isNotBlank()) {
+                                viewModel.sendMessage(messageText)
+                                messageText = ""
+                                keyboardController?.hide()
+                            }
+                        }
+                    )
                 )
                 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -137,6 +127,7 @@ fun ChatbotScreen(
                         if (messageText.isNotBlank()) {
                             viewModel.sendMessage(messageText)
                             messageText = ""
+                            keyboardController?.hide()
                         }
                     },
                     containerColor = Color(0xFF7BA589),
@@ -148,7 +139,6 @@ fun ChatbotScreen(
             }
         }
     }
-}
 
 @Composable
 fun WelcomeMessage() {
