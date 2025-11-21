@@ -1,5 +1,6 @@
 package com.example.rechypher_ai_app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,6 +29,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rechypher_ai_app.R
 import com.example.rechypher_ai_app.utils.CarbonCalculator
 import com.example.rechypher_ai_app.utils.WasteCategorizer
 import com.example.rechypher_ai_app.viewmodel.ScanHistoryViewModel
@@ -359,10 +363,10 @@ fun HistoryItemCard(
                         .background(binType.color.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
+                    Image(
+                        painter = painterResource(id = R.drawable.recycle),
                         contentDescription = null,
-                        tint = binType.color,
+                        colorFilter = ColorFilter.tint(binType.color),
                         modifier = Modifier.size(20.dp)
                     )
                 }

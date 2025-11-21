@@ -69,6 +69,42 @@ fun CameraScreen(
         hasCameraPermission = isGranted
     }
     
+    // Gallery image picker
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            try {
+                val originalBitmap = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+                    android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                        // Force software bitmap to avoid HARDWARE config issues
+                        decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    android.provider.MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                }
+                
+                // Convert to mutable software bitmap if needed
+                val bitmap = if (originalBitmap.config == Bitmap.Config.HARDWARE) {
+                    originalBitmap.copy(Bitmap.Config.ARGB_8888, false)
+                } else {
+                    originalBitmap
+                }
+                
+                capturedImage = bitmap
+                isProcessing = true
+                // Classify the image
+                val result = wasteClassifier.classifyImage(bitmap)
+                classificationResult = result
+                isProcessing = false
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
     LaunchedEffect(Unit) {
         cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
@@ -93,6 +129,9 @@ fun CameraScreen(
                             val result = wasteClassifier.classifyImage(bitmap)
                             classificationResult = result
                             isProcessing = false
+                        },
+                        onGalleryClick = {
+                            galleryLauncher.launch("image/*")
                         }
                     )
                 } else {
@@ -255,7 +294,8 @@ fun CameraScreen(
 
 @Composable
 fun CameraPreview(
-    onImageCaptured: (Bitmap) -> Unit
+    onImageCaptured: (Bitmap) -> Unit,
+    onGalleryClick: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -300,47 +340,66 @@ fun CameraPreview(
             modifier = Modifier.fillMaxSize()
         )
         
-        // Capture button with camera icon
-        FloatingActionButton(
-            onClick = {
-                imageCapture?.let { capture ->
-                    capture.takePicture(
-                        cameraExecutor,
-                        object : ImageCapture.OnImageCapturedCallback() {
-                            override fun onCaptureSuccess(image: ImageProxy) {
-                                val bitmap = image.toBitmap()
-                                val rotatedBitmap = rotateBitmap(bitmap, image.imageInfo.rotationDegrees.toFloat())
-                                onImageCaptured(rotatedBitmap)
-                                image.close()
-                            }
-                            
-                            override fun onError(exception: ImageCaptureException) {
-                                exception.printStackTrace()
-                            }
-                        }
-                    )
-                }
-            },
+        // Bottom controls row
+        Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(32.dp)
-                .size(72.dp),
-            containerColor = White,
-            contentColor = PrimaryGreen
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .border(3.dp, PrimaryGreen, CircleShape),
-                contentAlignment = Alignment.Center
+            // Gallery button
+            FloatingActionButton(
+                onClick = onGalleryClick,
+                modifier = Modifier.size(56.dp),
+                containerColor = White.copy(alpha = 0.9f),
+                contentColor = PrimaryGreen,
+                shape = CircleShape
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.camera),
-                    contentDescription = "Capture",
-                    tint = PrimaryGreen,
-                    modifier = Modifier.size(32.dp)
+                Image(
+                    painter = painterResource(id = R.drawable.gallery),
+                    contentDescription = "Gallery",
+                    modifier = Modifier.size(28.dp)
                 )
             }
+            
+            // Capture button - completely round
+            FloatingActionButton(
+                onClick = {
+                    imageCapture?.let { capture ->
+                        capture.takePicture(
+                            cameraExecutor,
+                            object : ImageCapture.OnImageCapturedCallback() {
+                                override fun onCaptureSuccess(image: ImageProxy) {
+                                    val bitmap = image.toBitmap()
+                                    val rotatedBitmap = rotateBitmap(bitmap, image.imageInfo.rotationDegrees.toFloat())
+                                    onImageCaptured(rotatedBitmap)
+                                    image.close()
+                                }
+                                
+                                override fun onError(exception: ImageCaptureException) {
+                                    exception.printStackTrace()
+                                }
+                            }
+                        )
+                    }
+                },
+                modifier = Modifier.size(72.dp),
+                containerColor = White,
+                contentColor = PrimaryGreen,
+                shape = CircleShape
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(6.dp)
+                        .background(PrimaryGreen, CircleShape)
+                )
+            }
+            
+            // Spacer for symmetry
+            Box(modifier = Modifier.size(56.dp))
         }
     }
     
