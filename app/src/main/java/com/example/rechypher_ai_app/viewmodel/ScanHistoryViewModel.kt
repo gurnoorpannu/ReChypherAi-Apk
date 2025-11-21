@@ -111,27 +111,87 @@ class ScanHistoryViewModel(application: Application) : AndroidViewModel(applicat
     }
     
     /**
-     * Calculate waste type percentages
+     * Calculate waste type percentages - Top 3 categories + Others
      */
     fun getWasteStats(): WasteStats {
         val items = _scanHistory.value
-        val total = items.size.toFloat()
-        if (total == 0f) return WasteStats(0, 0, 0)
+        val total = items.size
+        if (total == 0) return WasteStats(emptyList())
         
-        val plasticCount = items.count { it.wasteLabel == "plastic" }
-        val paperCount = items.count { it.wasteLabel in listOf("paper", "cardboard") }
-        val glassCount = items.count { it.wasteLabel in listOf("brown-glass", "green-glass", "white-glass") }
+        // Count each waste type
+        val wasteCounts = items.groupingBy { it.wasteLabel }.eachCount()
         
-        return WasteStats(
-            plasticPercent = ((plasticCount / total) * 100).toInt(),
-            paperPercent = ((paperCount / total) * 100).toInt(),
-            glassPercent = ((glassCount / total) * 100).toInt()
-        )
+        // Sort by count descending
+        val sortedCounts = wasteCounts.entries.sortedByDescending { it.value }
+        
+        // Take top 3
+        val topThree = sortedCounts.take(3).map { (label, count) ->
+            WasteCategory(
+                label = formatLabel(label),
+                percent = ((count.toFloat() / total) * 100).toInt(),
+                color = getCategoryColor(label)
+            )
+        }
+        
+        // Calculate "Others" - sum of all items beyond top 3
+        val topThreeActualCount = sortedCounts.take(3).sumOf { it.value }
+        val othersCount = total - topThreeActualCount
+        val othersPercent = if (othersCount > 0) {
+            ((othersCount.toFloat() / total) * 100).toInt()
+        } else {
+            0
+        }
+        
+        val categories = topThree.toMutableList()
+        if (othersPercent > 0) {
+            categories.add(
+                WasteCategory(
+                    label = "Others",
+                    percent = othersPercent,
+                    color = android.graphics.Color.parseColor("#9CA3AF") // Gray color
+                )
+            )
+        }
+        
+        return WasteStats(categories)
+    }
+    
+    private fun formatLabel(label: String): String {
+        return when (label) {
+            "plastic" -> "Plastic"
+            "paper", "cardboard" -> "Paper"
+            "brown-glass", "green-glass", "white-glass" -> "Glass"
+            "metal" -> "Metal"
+            "biological" -> "Organic"
+            "battery" -> "Battery"
+            "clothes" -> "Clothes"
+            "shoes" -> "Shoes"
+            "trash" -> "Trash"
+            else -> label.capitalize()
+        }
+    }
+    
+    private fun getCategoryColor(label: String): Int {
+        return when (label) {
+            "plastic" -> android.graphics.Color.parseColor("#22C55E") // Green
+            "paper", "cardboard" -> android.graphics.Color.parseColor("#FA8C33") // Orange
+            "brown-glass", "green-glass", "white-glass" -> android.graphics.Color.parseColor("#3B82F6") // Blue
+            "metal" -> android.graphics.Color.parseColor("#EAB308") // Yellow
+            "biological" -> android.graphics.Color.parseColor("#10B981") // Emerald
+            "battery" -> android.graphics.Color.parseColor("#EF4444") // Red
+            "clothes" -> android.graphics.Color.parseColor("#8B5CF6") // Purple
+            "shoes" -> android.graphics.Color.parseColor("#EC4899") // Pink
+            else -> android.graphics.Color.parseColor("#6B7280") // Gray
+        }
     }
 }
 
+data class WasteCategory(
+    val label: String,
+    val percent: Int,
+    val color: Int
+)
+
 data class WasteStats(
-    val plasticPercent: Int,
-    val paperPercent: Int,
-    val glassPercent: Int
+    val categories: List<WasteCategory>
 )

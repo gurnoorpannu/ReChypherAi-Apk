@@ -221,13 +221,45 @@ fun HeaderCard(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Legend with real percentages
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    // Legend with real percentages - Top 3 + Others
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        LegendItem("${wasteStats.plasticPercent}%", "Plastic", Color(0xFF22C55E))
-                        LegendItem("${wasteStats.glassPercent}%", "Glass", Color(0xFF3B82F6))
-                        LegendItem("${wasteStats.paperPercent}%", "Paper", Color(0xFFFA8C33))
+                        val categories = wasteStats.categories
+                        if (categories.size >= 2) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                LegendItem(
+                                    "${categories[0].percent}%",
+                                    categories[0].label,
+                                    Color(categories[0].color)
+                                )
+                                LegendItem(
+                                    "${categories[1].percent}%",
+                                    categories[1].label,
+                                    Color(categories[1].color)
+                                )
+                            }
+                        }
+                        if (categories.size >= 3) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                LegendItem(
+                                    "${categories[2].percent}%",
+                                    categories[2].label,
+                                    Color(categories[2].color)
+                                )
+                                if (categories.size >= 4) {
+                                    LegendItem(
+                                        "${categories[3].percent}%",
+                                        categories[3].label,
+                                        Color(categories[3].color)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -261,68 +293,36 @@ fun LegendItem(percentage: String, label: String, color: Color) {
 fun CircularProgress(wasteStats: com.example.rechypher_ai_app.viewmodel.WasteStats) {
     Canvas(modifier = Modifier.size(120.dp)) {
         val strokeWidth = 10f
+        val categories = wasteStats.categories
+        val ringOffsets = listOf(0f, 24f, 48f, 72f)
 
-        // Background circles
-        drawArc(
-            color = Color(0xFFE5E7EB),
-            startAngle = 0f,
-            sweepAngle = 360f,
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-            size = Size(size.width - strokeWidth, size.height - strokeWidth)
-        )
+        // Draw background circles for each category
+        categories.take(4).forEachIndexed { index, _ ->
+            val offset = ringOffsets[index]
+            drawArc(
+                color = Color(0xFFE5E7EB),
+                startAngle = 0f,
+                sweepAngle = 360f,
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                topLeft = Offset(strokeWidth / 2 + offset, strokeWidth / 2 + offset),
+                size = Size(size.width - strokeWidth - (offset * 2), size.height - strokeWidth - (offset * 2))
+            )
+        }
 
-        drawArc(
-            color = Color(0xFFE5E7EB),
-            startAngle = 0f,
-            sweepAngle = 360f,
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            topLeft = Offset(strokeWidth / 2 + 24, strokeWidth / 2 + 24),
-            size = Size(size.width - strokeWidth - 48, size.height - strokeWidth - 48)
-        )
-
-        drawArc(
-            color = Color(0xFFE5E7EB),
-            startAngle = 0f,
-            sweepAngle = 360f,
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            topLeft = Offset(strokeWidth / 2 + 48, strokeWidth / 2 + 48),
-            size = Size(size.width - strokeWidth - 96, size.height - strokeWidth - 96)
-        )
-
-        // Progress arcs with real data
-        drawArc(
-            color = Color(0xFF22C55E),
-            startAngle = -90f,
-            sweepAngle = (wasteStats.plasticPercent * 3.6f),
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-            size = Size(size.width - strokeWidth, size.height - strokeWidth)
-        )
-
-        drawArc(
-            color = Color(0xFF3B82F6),
-            startAngle = -90f,
-            sweepAngle = (wasteStats.glassPercent * 3.6f),
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            topLeft = Offset(strokeWidth / 2 + 24, strokeWidth / 2 + 24),
-            size = Size(size.width - strokeWidth - 48, size.height - strokeWidth - 48)
-        )
-
-        drawArc(
-            color = Color(0xFFFA8C33),
-            startAngle = -90f,
-            sweepAngle = (wasteStats.paperPercent * 3.6f),
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            topLeft = Offset(strokeWidth / 2 + 48, strokeWidth / 2 + 48),
-            size = Size(size.width - strokeWidth - 96, size.height - strokeWidth - 96)
-        )
+        // Draw progress arcs with real data
+        categories.take(4).forEachIndexed { index, category ->
+            val offset = ringOffsets[index]
+            drawArc(
+                color = Color(category.color),
+                startAngle = -90f,
+                sweepAngle = (category.percent * 3.6f),
+                useCenter = false,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                topLeft = Offset(strokeWidth / 2 + offset, strokeWidth / 2 + offset),
+                size = Size(size.width - strokeWidth - (offset * 2), size.height - strokeWidth - (offset * 2))
+            )
+        }
     }
 }
 
