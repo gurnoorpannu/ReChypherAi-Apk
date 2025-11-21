@@ -1,5 +1,6 @@
 package com.example.rechypher_ai_app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,11 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.rechypher_ai_app.R
 import com.example.rechypher_ai_app.viewmodel.ChatViewModel
 import kotlinx.coroutines.launch
 
@@ -52,6 +55,7 @@ fun ChatbotScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .statusBarsPadding()
     ) {
             
             // Messages
@@ -62,8 +66,9 @@ fun ChatbotScreen(
                     .padding(horizontal = 16.dp),
                 state = listState,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
+                contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
             ) {
+                
                 if (viewModel.messages.isEmpty()) {
                     item {
                         WelcomeMessage()
@@ -147,38 +152,38 @@ fun WelcomeMessage() {
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFF5F5F5)
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "👋 Welcome!",
-                fontSize = 20.sp,
+                " Welcome!",
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF7BA589)
+                color = Color(0xFF7BA589),
+                modifier = Modifier.align(Alignment.Start)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
-                "I'm your waste management assistant. Ask me about:",
+                "I'm your waste management assistant.You can ask me anything about waste management.",
                 fontSize = 14.sp,
-                color = Color.DarkGray
+                color = Color.DarkGray,
+                modifier = Modifier.align(Alignment.Start)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            listOf(
-                "♻️ Recycling guidelines",
-                "🗑️ Waste disposal methods",
-                "🌱 Composting tips",
-                "📦 Waste segregation",
-                "🌍 Environmental sustainability"
-            ).forEach { item ->
-                Text(
-                    item,
-                    fontSize = 13.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(vertical = 2.dp)
-                )
-            }
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // WALL-E Image
+            Image(
+                painter = painterResource(id = R.drawable.walle),
+                contentDescription = "WALL-E",
+                modifier = Modifier.size(250.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
