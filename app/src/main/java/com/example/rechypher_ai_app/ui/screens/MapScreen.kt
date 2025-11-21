@@ -160,75 +160,63 @@ fun MapScreen() {
                 }
             }
             
-            // Dialog for disposal center details
+            // Bottom dialog for disposal center details
             if (showDialog && selectedCenter != null) {
-                Dialog(onDismissRequest = { showDialog = false }) {
-                    Card(
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = White
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = White
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                            .padding(24.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        Text(
+                            text = selectedCenter!!.second,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = DarkGreen
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "Waste Disposal Center",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Spacer(modifier = Modifier.height(20.dp))
+                        
+                        Button(
+                            onClick = {
+                                val location = selectedCenter!!.first
+                                val uri = Uri.parse(
+                                    "google.navigation:q=${location.latitude},${location.longitude}"
+                                )
+                                val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                                    setPackage("com.google.android.apps.maps")
+                                }
+                                context.startActivity(intent)
+                                showDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryGreen
+                            )
                         ) {
                             Text(
-                                text = selectedCenter!!.second,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkGreen
+                                text = "Get Directions",
+                                color = White,
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            Text(
-                                text = "Waste Disposal Center",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            
-                            Spacer(modifier = Modifier.height(24.dp))
-                            
-                            Button(
-                                onClick = {
-                                    val location = selectedCenter!!.first
-                                    val uri = Uri.parse(
-                                        "google.navigation:q=${location.latitude},${location.longitude}"
-                                    )
-                                    val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-                                        setPackage("com.google.android.apps.maps")
-                                    }
-                                    context.startActivity(intent)
-                                    showDialog = false
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = PrimaryGreen
-                                )
-                            ) {
-                                Text(
-                                    text = "Get Directions",
-                                    color = White,
-                                    modifier = Modifier.padding(vertical = 8.dp)
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            TextButton(
-                                onClick = { showDialog = false },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = "Cancel",
-                                    color = DarkGreen
-                                )
-                            }
                         }
                     }
                 }
