@@ -36,7 +36,9 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen() {
+fun MapScreen(
+    navigateToNearest: Boolean = false
+) {
     val context = LocalContext.current
     val locationHelper = remember { LocationHelper(context) }
     val scope = rememberCoroutineScope()
@@ -66,7 +68,7 @@ fun MapScreen() {
     }
     
     // Function to find nearest disposal center
-    fun findNearestCenter(currentLocation: LatLng): LatLng {
+    fun findNearestCenter(currentLocation: LatLng): Pair<LatLng, String> {
         return demoDisposalCenters.minByOrNull { (location, _) ->
             val results = FloatArray(1)
             android.location.Location.distanceBetween(
@@ -75,7 +77,7 @@ fun MapScreen() {
                 results
             )
             results[0]
-        }?.first ?: demoDisposalCenters.first().first
+        } ?: demoDisposalCenters.first()
     }
     
     // Location permission launcher
@@ -103,9 +105,19 @@ fun MapScreen() {
             locationHelper.getCurrentLocation { location ->
                 userLocation = location
                 scope.launch {
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngZoom(location, 15f)
-                    )
+                    if (navigateToNearest) {
+                        // Navigate to nearest center automatically
+                        val nearestCenter = findNearestCenter(location)
+                        selectedCenter = nearestCenter
+                        showDialog = true
+                        cameraPositionState.animate(
+                            CameraUpdateFactory.newLatLngZoom(nearestCenter.first, 16f)
+                        )
+                    } else {
+                        cameraPositionState.animate(
+                            CameraUpdateFactory.newLatLngZoom(location, 15f)
+                        )
+                    }
                 }
             }
         } else {
@@ -304,9 +316,11 @@ fun MapScreen() {
                     onClick = { 
                         val currentLoc = userLocation ?: defaultLocation
                         val nearestCenter = findNearestCenter(currentLoc)
+                        selectedCenter = nearestCenter
+                        showDialog = true
                         scope.launch {
                             cameraPositionState.animate(
-                                CameraUpdateFactory.newLatLngZoom(nearestCenter, 16f)
+                                CameraUpdateFactory.newLatLngZoom(nearestCenter.first, 16f)
                             )
                         }
                     },
