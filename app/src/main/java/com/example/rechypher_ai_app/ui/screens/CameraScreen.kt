@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.rechypher_ai_app.ml.WasteClassifier
+import com.example.rechypher_ai_app.ui.functions.CarbonImpactCard
 import com.example.rechypher_ai_app.ui.theme.DarkGreen
 import com.example.rechypher_ai_app.ui.theme.PrimaryGreen
 import com.example.rechypher_ai_app.ui.theme.White
@@ -234,6 +235,15 @@ fun CameraScreen(onBackClick: () -> Unit = {}) {
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+                                    
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    
+                                    // Carbon Impact Card
+                                    CarbonImpactCard(
+                                        wasteLabel = label,
+                                        compact = true
+                                    )
+                                    
                                     Spacer(modifier = Modifier.height(24.dp))
                                     Button(
                                         onClick = {
