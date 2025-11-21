@@ -45,7 +45,8 @@ import kotlin.coroutines.suspendCoroutine
 @Composable
 fun CameraScreen(
     onBackClick: () -> Unit = {},
-    scanHistoryViewModel: com.example.rechypher_ai_app.viewmodel.ScanHistoryViewModel? = null
+    scanHistoryViewModel: com.example.rechypher_ai_app.viewmodel.ScanHistoryViewModel? = null,
+    onNavigateToMap: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -249,39 +250,24 @@ fun CameraScreen(
                                     
                                     Spacer(modifier = Modifier.height(24.dp))
                                     
-                                    Row(
+                                    // Single button to add to history and navigate to map
+                                    Button(
+                                        onClick = {
+                                            // Add to history when button is clicked
+                                            scanHistoryViewModel?.addScan(label)
+                                            // Navigate to map screen
+                                            onNavigateToMap()
+                                            capturedImage = null
+                                            classificationResult = null
+                                        },
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
                                     ) {
-                                        Button(
-                                            onClick = {
-                                                // Add to history
-                                                scanHistoryViewModel?.addScan(label)
-                                                capturedImage = null
-                                                classificationResult = null
-                                            },
-                                            modifier = Modifier.weight(1f),
-                                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
-                                        ) {
-                                            Text(
-                                                "Save & Continue",
-                                                color = White,
-                                                modifier = Modifier.padding(vertical = 8.dp)
-                                            )
-                                        }
-                                        
-                                        OutlinedButton(
-                                            onClick = {
-                                                capturedImage = null
-                                                classificationResult = null
-                                            },
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Text(
-                                                "Discard",
-                                                modifier = Modifier.padding(vertical = 8.dp)
-                                            )
-                                        }
+                                        Text(
+                                            "Get Directions to Nearest Center",
+                                            color = White,
+                                            modifier = Modifier.padding(vertical = 12.dp)
+                                        )
                                     }
                                 }
                             }

@@ -32,7 +32,8 @@ fun MainScreen() {
                 1 -> MapScreen()
                 2 -> CameraScreen(
                     onBackClick = { selectedScreen = 0 },
-                    scanHistoryViewModel = scanHistoryViewModel
+                    scanHistoryViewModel = scanHistoryViewModel,
+                    onNavigateToMap = { selectedScreen = 1 }
                 )
                 3 -> ChatbotScreen(onClose = { selectedScreen = 0 })
             }
