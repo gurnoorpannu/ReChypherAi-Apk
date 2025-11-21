@@ -5,9 +5,15 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -160,73 +166,106 @@ fun MapScreen() {
                 }
             }
             
-            // Bottom dialog for disposal center details
-            if (showDialog && selectedCenter != null) {
+            // Bottom dialog for disposal center details with expand vertically animation
+            AnimatedVisibility(
+                visible = showDialog && selectedCenter != null,
+                enter = expandVertically(
+                    animationSpec = tween(durationMillis = 300),
+                    expandFrom = Alignment.Bottom
+                ),
+                exit = shrinkVertically(
+                    animationSpec = tween(durationMillis = 300),
+                    shrinkTowards = Alignment.Bottom
+                ),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
                 Card(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = White
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp)
+                    Box(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = selectedCenter!!.second,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkGreen
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = "Waste Disposal Center",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        
-                        Spacer(modifier = Modifier.height(20.dp))
-                        
-                        Button(
-                            onClick = {
-                                val location = selectedCenter!!.first
-                                val uri = Uri.parse(
-                                    "google.navigation:q=${location.latitude},${location.longitude}"
-                                )
-                                val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-                                    setPackage("com.google.android.apps.maps")
-                                }
-                                context.startActivity(intent)
-                                showDialog = false
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryGreen
-                            )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp)
                         ) {
                             Text(
-                                text = "Get Directions",
-                                color = White,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                text = selectedCenter!!.second,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = DarkGreen,
+                                modifier = Modifier.padding(end = 32.dp)
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "Waste Disposal Center",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Spacer(modifier = Modifier.height(20.dp))
+                            
+                            Button(
+                                onClick = {
+                                    val location = selectedCenter!!.first
+                                    val uri = Uri.parse(
+                                        "google.navigation:q=${location.latitude},${location.longitude}"
+                                    )
+                                    val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                                        setPackage("com.google.android.apps.maps")
+                                    }
+                                    context.startActivity(intent)
+                                    showDialog = false
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryGreen
+                                )
+                            ) {
+                                Text(
+                                    text = "Get Directions",
+                                    color = White,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                        }
+                        
+                        // Close icon button
+                        IconButton(
+                            onClick = { showDialog = false },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = DarkGreen
                             )
                         }
                     }
                 }
             }
             
-            // Custom floating action buttons
+            // Custom floating action buttons - move up when dialog is shown
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp),
+                    .padding(
+                        end = 16.dp,
+                        bottom = if (showDialog) 200.dp else 16.dp
+                    ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // User location button
