@@ -1,17 +1,23 @@
 package com.example.rechypher_ai_app.ui.screens
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.example.rechypher_ai_app.R
 import com.example.rechypher_ai_app.ui.theme.DarkGreen
 import com.example.rechypher_ai_app.ui.theme.PrimaryGreen
 import com.example.rechypher_ai_app.ui.theme.White
@@ -29,13 +35,41 @@ fun MapScreen() {
     val locationHelper = remember { LocationHelper(context) }
     val scope = rememberCoroutineScope()
     
+    // Demo disposal centers - TODO: Fetch from backend
+    val demoDisposalCenters = remember {
+        listOf(
+            LatLng(28.6139, 77.2090) to "Green Waste Center",
+            LatLng(28.6289, 77.2190) to "Eco Disposal Hub",
+            LatLng(28.5989, 77.1990) to "Recycle Point",
+            LatLng(28.6450, 77.2200) to "Clean Earth Center",
+            LatLng(28.5850, 77.2350) to "Waste Management Station"
+        )
+    }
+    
     // Default location
     val defaultLocation = LatLng(28.6139, 77.2090) // Delhi, India
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
     var hasLocationPermission by remember { mutableStateOf(locationHelper.hasLocationPermission()) }
     
+    // Dialog state for selected disposal center
+    var selectedCenter by remember { mutableStateOf<Pair<LatLng, String>?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+    
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 12f)
+    }
+    
+    // Function to find nearest disposal center
+    fun findNearestCenter(currentLocation: LatLng): LatLng {
+        return demoDisposalCenters.minByOrNull { (location, _) ->
+            val results = FloatArray(1)
+            android.location.Location.distanceBetween(
+                currentLocation.latitude, currentLocation.longitude,
+                location.latitude, location.longitude,
+                results
+            )
+            results[0]
+        }?.first ?: demoDisposalCenters.first().first
     }
     
     // Location permission launcher
@@ -94,36 +128,7 @@ fun MapScreen() {
                 )
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { 
-                    if (hasLocationPermission) {
-                        locationHelper.getCurrentLocation { location ->
-                            userLocation = location
-                            scope.launch {
-                                cameraPositionState.animate(
-                                    CameraUpdateFactory.newLatLngZoom(location, 15f)
-                                )
-                            }
-                        }
-                    } else {
-                        locationPermissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
-                    }
-                },
-                containerColor = PrimaryGreen,
-                contentColor = White
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = "My Location"
-                )
-            }
-        }
+
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -140,32 +145,151 @@ fun MapScreen() {
                     zoomControlsEnabled = false,
                     myLocationButtonEnabled = false
                 )
-            )
-            
-            // Info card at the bottom
-            Card(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = White
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "Find Nearest Disposal Center",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = DarkGreen
+                demoDisposalCenters.forEach { (position, title) ->
+                    Marker(
+                        state = MarkerState(position = position),
+                        title = title,
+                        snippet = "Tap for details",
+                        onClick = {
+                            selectedCenter = position to title
+                            showDialog = true
+                            true
+                        }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Tap on markers to view center details",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            }
+            
+            // Dialog for disposal center details
+            if (showDialog && selectedCenter != null) {
+                Dialog(onDismissRequest = { showDialog = false }) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = White
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = selectedCenter!!.second,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = DarkGreen
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "Waste Disposal Center",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            Spacer(modifier = Modifier.height(24.dp))
+                            
+                            Button(
+                                onClick = {
+                                    val location = selectedCenter!!.first
+                                    val uri = Uri.parse(
+                                        "google.navigation:q=${location.latitude},${location.longitude}"
+                                    )
+                                    val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+                                        setPackage("com.google.android.apps.maps")
+                                    }
+                                    context.startActivity(intent)
+                                    showDialog = false
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryGreen
+                                )
+                            ) {
+                                Text(
+                                    text = "Get Directions",
+                                    color = White,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            TextButton(
+                                onClick = { showDialog = false },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Cancel",
+                                    color = DarkGreen
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Custom floating action buttons
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // User location button
+                FloatingActionButton(
+                    onClick = { 
+                        if (hasLocationPermission) {
+                            locationHelper.getCurrentLocation { location ->
+                                userLocation = location
+                                scope.launch {
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngZoom(location, 15f)
+                                    )
+                                }
+                            }
+                        } else {
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
+                    },
+                    containerColor = White,
+                    contentColor = PrimaryGreen
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.user_location),
+                        contentDescription = "My Location",
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+                
+                // Nearest trash center button
+                FloatingActionButton(
+                    onClick = { 
+                        val currentLoc = userLocation ?: defaultLocation
+                        val nearestCenter = findNearestCenter(currentLoc)
+                        scope.launch {
+                            cameraPositionState.animate(
+                                CameraUpdateFactory.newLatLngZoom(nearestCenter, 16f)
+                            )
+                        }
+                    },
+                    containerColor = White,
+                    contentColor = PrimaryGreen
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.trash_location),
+                        contentDescription = "Nearest Trash Center",
+                        modifier = Modifier.size(40.dp)
                     )
                 }
             }
