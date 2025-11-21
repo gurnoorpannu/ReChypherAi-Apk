@@ -1,5 +1,6 @@
 package com.example.rechypher_ai_app.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,13 @@ fun MainScreen() {
     
     // Shared ViewModel for scan history
     val scanHistoryViewModel: ScanHistoryViewModel = viewModel()
+    
+    // Handle back button press
+    BackHandler(enabled = selectedScreen != 0) {
+        // Navigate back to home screen instead of closing app
+        selectedScreen = 0
+        navigateToNearestCenter = false
+    }
     
     Box(modifier = Modifier.fillMaxSize()) {
         // Main content with bottom padding for the nav bar
