@@ -16,6 +16,7 @@ import com.example.rechypher_ai_app.viewmodel.ScanHistoryViewModel
 @Composable
 fun MainScreen() {
     var selectedScreen by remember { mutableStateOf(0) }
+    var navigateToNearestCenter by remember { mutableStateOf(false) }
     
     // Shared ViewModel for scan history
     val scanHistoryViewModel: ScanHistoryViewModel = viewModel()
@@ -29,11 +30,14 @@ fun MainScreen() {
         ) {
             when (selectedScreen) {
                 0 -> HomeScreen(scanHistoryViewModel = scanHistoryViewModel)
-                1 -> MapScreen()
+                1 -> MapScreen(navigateToNearest = navigateToNearestCenter)
                 2 -> CameraScreen(
                     onBackClick = { selectedScreen = 0 },
                     scanHistoryViewModel = scanHistoryViewModel,
-                    onNavigateToMap = { selectedScreen = 1 }
+                    onNavigateToMap = { 
+                        navigateToNearestCenter = true
+                        selectedScreen = 1
+                    }
                 )
                 3 -> ChatbotScreen(onClose = { selectedScreen = 0 })
             }
@@ -56,7 +60,13 @@ fun MainScreen() {
         ) {
             BottomNavBar(
                 selectedItem = selectedScreen,
-                onItemSelected = { selectedScreen = it }
+                onItemSelected = { 
+                    // Reset navigateToNearestCenter when manually navigating
+                    if (it != 1) {
+                        navigateToNearestCenter = false
+                    }
+                    selectedScreen = it
+                }
             )
         }
     }
