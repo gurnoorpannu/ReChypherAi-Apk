@@ -25,47 +25,32 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rechypher_ai_app.utils.CarbonCalculator
 import com.example.rechypher_ai_app.utils.WasteCategorizer
+import com.example.rechypher_ai_app.viewmodel.ScanHistoryViewModel
+import com.example.rechypher_ai_app.viewmodel.ScanHistoryItem
 import java.text.SimpleDateFormat
 import java.util.*
 
-data class HistoryItem(
-    val wasteLabel: String,
-    val title: String,
-    val date: String,
-    val weight: String,
-    val carbonSaved: Double,
-    val carbonEmitted: Double
-)
-
 @Composable
-fun HomeScreen() {
-    // Sample history items with carbon calculations
-    val historyItems = remember {
-        listOf(
-            createHistoryItem("plastic", "Plastic bottle recycled"),
-            createHistoryItem("paper", "Paper waste recycled"),
-            createHistoryItem("cardboard", "Cardboard box recycled"),
-            createHistoryItem("metal", "Aluminum can recycled"),
-            createHistoryItem("biological", "Food waste composted"),
-            createHistoryItem("battery", "Battery properly disposed")
-        )
-    }
+fun HomeScreen(
+    scanHistoryViewModel: ScanHistoryViewModel
+) {
+    // Observe scan history from ViewModel
+    val scanHistory by scanHistoryViewModel.scanHistory.collectAsState()
     
-    // Calculate total carbon saved this month
-    val totalCarbonSaved = remember(historyItems) {
-        historyItems.sumOf { it.carbonSaved - it.carbonEmitted }
+    // Calculate total carbon saved
+    val totalCarbonSaved = remember(scanHistory) {
+        scanHistoryViewModel.getTotalCarbonSaved()
     }
     
     // Calculate waste type percentages
-    val wasteStats = remember(historyItems) {
-        calculateWasteStats(historyItems)
+    val wasteStats = remember(scanHistory) {
+        scanHistoryViewModel.getWasteStats()
     }
 
-    Scaffold(
-        bottomBar = { BottomNavigationBar() }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -93,11 +78,47 @@ fun HomeScreen() {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(historyItems) { item ->
-                        HistoryItemCard(item)
+                if (scanHistory.isEmpty()) {
+                    // Empty state
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = Color(0xFF9CA3AF)
+                            )
+                            Text(
+                                text = "No scans yet",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF6B7280)
+                            )
+                            Text(
+                                text = "Start scanning waste to see your history",
+                                fontSize = 14.sp,
+                                color = Color(0xFF9CA3AF)
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(scanHistory) { item ->
+                            HistoryItemCard(
+                                item = item,
+                                onDelete = { scanHistoryViewModel.removeScan(item.id) }
+                            )
+                        }
                     }
                 }
             }
@@ -105,48 +126,12 @@ fun HomeScreen() {
     }
 }
 
-private fun createHistoryItem(wasteLabel: String, title: String): HistoryItem {
-    val (carbonSaved, carbonEmitted) = CarbonCalculator.calculateCarbon(wasteLabel)
-    val carbonData = CarbonCalculator.carbonTable[wasteLabel]
-    val weight = carbonData?.avgWeight ?: 0.0
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    val date = dateFormat.format(Date())
-    
-    return HistoryItem(
-        wasteLabel = wasteLabel,
-        title = title,
-        date = date,
-        weight = String.format("%.2f kg", weight),
-        carbonSaved = carbonSaved,
-        carbonEmitted = carbonEmitted
-    )
-}
 
-data class WasteStats(
-    val plasticPercent: Int,
-    val paperPercent: Int,
-    val glassPercent: Int
-)
-
-private fun calculateWasteStats(items: List<HistoryItem>): WasteStats {
-    val total = items.size.toFloat()
-    if (total == 0f) return WasteStats(0, 0, 0)
-    
-    val plasticCount = items.count { it.wasteLabel == "plastic" }
-    val paperCount = items.count { it.wasteLabel in listOf("paper", "cardboard") }
-    val glassCount = items.count { it.wasteLabel in listOf("brown-glass", "green-glass", "white-glass") }
-    
-    return WasteStats(
-        plasticPercent = ((plasticCount / total) * 100).toInt(),
-        paperPercent = ((paperCount / total) * 100).toInt(),
-        glassPercent = ((glassCount / total) * 100).toInt()
-    )
-}
 
 @Composable
 fun HeaderCard(
     totalCarbonSaved: Double,
-    wasteStats: WasteStats
+    wasteStats: com.example.rechypher_ai_app.viewmodel.WasteStats
 ) {
     Box(
         modifier = Modifier
@@ -273,7 +258,7 @@ fun LegendItem(percentage: String, label: String, color: Color) {
 }
 
 @Composable
-fun CircularProgress(wasteStats: WasteStats) {
+fun CircularProgress(wasteStats: com.example.rechypher_ai_app.viewmodel.WasteStats) {
     Canvas(modifier = Modifier.size(120.dp)) {
         val strokeWidth = 10f
 
@@ -342,7 +327,10 @@ fun CircularProgress(wasteStats: WasteStats) {
 }
 
 @Composable
-fun HistoryItemCard(item: HistoryItem) {
+fun HistoryItemCard(
+    item: ScanHistoryItem,
+    onDelete: () -> Unit = {}
+) {
     val binType = WasteCategorizer.getBinType(item.wasteLabel)
     val netImpact = item.carbonSaved - item.carbonEmitted
     
@@ -410,69 +398,26 @@ fun HistoryItemCard(item: HistoryItem) {
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF86EFAC)),
-                contentAlignment = Alignment.Center
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(36.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Camera",
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFEF4444).copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Delete",
+                        tint = Color(0xFFEF4444),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
 }
 
-@Composable
-fun BottomNavigationBar() {
-    NavigationBar(
-        containerColor = Color(0xFF1F2937),
-        modifier = Modifier.height(70.dp)
-    ) {
-        NavigationBarItem(
-            selected = true,
-            onClick = { },
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.White,
-                unselectedIconColor = Color(0xFF9CA3AF),
-                indicatorColor = Color.Transparent
-            )
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = { },
-            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.White,
-                unselectedIconColor = Color(0xFF9CA3AF),
-                indicatorColor = Color.Transparent
-            )
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = { },
-            icon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.White,
-                unselectedIconColor = Color(0xFF9CA3AF),
-                indicatorColor = Color.Transparent
-            )
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = { },
-            icon = { Icon(Icons.Default.Close, contentDescription = "Link") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.White,
-                unselectedIconColor = Color(0xFF9CA3AF),
-                indicatorColor = Color.Transparent
-            )
-        )
-    }
-}

@@ -43,7 +43,10 @@ import kotlin.coroutines.suspendCoroutine
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CameraScreen(onBackClick: () -> Unit = {}) {
+fun CameraScreen(
+    onBackClick: () -> Unit = {},
+    scanHistoryViewModel: com.example.rechypher_ai_app.viewmodel.ScanHistoryViewModel? = null
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     
@@ -245,19 +248,40 @@ fun CameraScreen(onBackClick: () -> Unit = {}) {
                                     )
                                     
                                     Spacer(modifier = Modifier.height(24.dp))
-                                    Button(
-                                        onClick = {
-                                            capturedImage = null
-                                            classificationResult = null
-                                        },
+                                    
+                                    Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        Text(
-                                            "Scan Another",
-                                            color = White,
-                                            modifier = Modifier.padding(vertical = 8.dp)
-                                        )
+                                        Button(
+                                            onClick = {
+                                                // Add to history
+                                                scanHistoryViewModel?.addScan(label)
+                                                capturedImage = null
+                                                classificationResult = null
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                                        ) {
+                                            Text(
+                                                "Save & Continue",
+                                                color = White,
+                                                modifier = Modifier.padding(vertical = 8.dp)
+                                            )
+                                        }
+                                        
+                                        OutlinedButton(
+                                            onClick = {
+                                                capturedImage = null
+                                                classificationResult = null
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(
+                                                "Discard",
+                                                modifier = Modifier.padding(vertical = 8.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }

@@ -54,10 +54,10 @@ fun BottomNavBar(
                 onClick = { onItemSelected(0) }
             )
 
-            // Wallet Icon
-            NavItem(
-                icon = Icons.Default.ShoppingCart,
-                label = "Wallet",
+            // Map Icon
+            NavItemImage(
+                imageRes = R.drawable.location,
+                label = "Map",
                 isSelected = selectedItem == 1,
                 onClick = { onItemSelected(1) }
             )
@@ -70,13 +70,6 @@ fun BottomNavBar(
                 onClick = { onItemSelected(2) }
             )
 
-            // Shopping Cart Icon
-            NavItem(
-                icon = Icons.Default.ShoppingCart,
-                label = "Shop",
-                isSelected = selectedItem == 3,
-                onClick = { onItemSelected(3) }
-            )
 
             // Profile Icon
             NavItem(
@@ -137,9 +130,10 @@ fun NavItemImage(
             onClick = onClick,
             modifier = Modifier.size(48.dp)
         ) {
-            Image(
+            Icon(
                 painter = painterResource(id = imageRes),
                 contentDescription = label,
+                tint = if (isSelected) Color(0xFF7BA589) else Color(0xFFB0B0B0),
                 modifier = Modifier.size(24.dp)
             )
         }

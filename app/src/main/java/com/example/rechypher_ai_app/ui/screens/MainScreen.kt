@@ -9,12 +9,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rechypher_ai_app.ui.functions.BottomNavBar
+import com.example.rechypher_ai_app.viewmodel.ScanHistoryViewModel
 
 @Composable
 fun MainScreen() {
     var selectedScreen by remember { mutableStateOf(0) }
     var showChatbot by remember { mutableStateOf(false) }
+    
+    // Shared ViewModel for scan history
+    val scanHistoryViewModel: ScanHistoryViewModel = viewModel()
     
     Box(modifier = Modifier.fillMaxSize()) {
         if (showChatbot) {
@@ -30,9 +35,12 @@ fun MainScreen() {
                     .padding(bottom = 80.dp)
             ) {
                 when (selectedScreen) {
-                    0 -> MapScreen()
+                    0 -> HomeScreen(scanHistoryViewModel = scanHistoryViewModel)
                     1 -> MapScreen() // Placeholder for wallet/card screen
-                    2 -> CameraScreen()
+                    2 -> CameraScreen(
+                        onBackClick = { selectedScreen = 0 },
+                        scanHistoryViewModel = scanHistoryViewModel
+                    )
                     3 -> MapScreen() // Placeholder for shopping cart screen
                     4 -> MapScreen() // Placeholder for profile screen
                 }
