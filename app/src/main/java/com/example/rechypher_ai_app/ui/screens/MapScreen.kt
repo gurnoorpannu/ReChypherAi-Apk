@@ -43,19 +43,19 @@ fun MapScreen(
     val locationHelper = remember { LocationHelper(context) }
     val scope = rememberCoroutineScope()
     
-    // Demo disposal centers - TODO: Fetch from backend
+    // Disposal centers
     val demoDisposalCenters = remember {
         listOf(
-            LatLng(28.6139, 77.2090) to "Green Waste Center",
-            LatLng(28.6289, 77.2190) to "Eco Disposal Hub",
-            LatLng(28.5989, 77.1990) to "Recycle Point",
-            LatLng(28.6450, 77.2200) to "Clean Earth Center",
-            LatLng(28.5850, 77.2350) to "Waste Management Station"
+            LatLng(30.3522, 76.3737) to "Patiala Waste Disposal Center",
+            LatLng(30.3400, 76.3850) to "Green Recycling Hub Patiala",
+            LatLng(30.3650, 76.3600) to "Eco Waste Management",
+            LatLng(30.3300, 76.3900) to "Clean Punjab Initiative",
+            LatLng(30.3700, 76.3500) to "Sustainable Waste Center"
         )
     }
     
-    // Default location
-    val defaultLocation = LatLng(28.6139, 77.2090) // Delhi, India
+    // Default location - Patiala, Punjab, India
+    val defaultLocation = LatLng(30.3522, 76.3737)
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
     var hasLocationPermission by remember { mutableStateOf(locationHelper.hasLocationPermission()) }
     
