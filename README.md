@@ -111,5 +111,3 @@ This app was built as part of a hackathon project with the goal of creating a re
 https://drive.google.com/drive/folders/1nJ2KmkCRadGgjG0n62pbMFEJcLxyJni5
 
 ---
-
-Recypher AI transforms waste disposal from a guessing task into a guided, responsible, and rewarding experience — empowering users to make smarter choices for a cleaner future.
