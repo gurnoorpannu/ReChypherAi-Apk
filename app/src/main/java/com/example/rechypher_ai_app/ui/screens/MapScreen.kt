@@ -284,6 +284,55 @@ fun MapScreen(
             }
         }
         
+        // Timeout dialog - asking user to retry or use demo locations
+        if (uiState.showTimeoutDialog) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissTimeoutDialog() },
+                icon = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.recycle),
+                        contentDescription = null,
+                        tint = PrimaryGreen,
+                        modifier = Modifier.size(48.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = "Server Taking Time",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "The server is taking longer than expected to respond. Would you like to retry or use pre-saved locations nearby?",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            userLocation?.let { loc ->
+                                viewModel.retryLoadCenters(loc.latitude, loc.longitude)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryGreen
+                        )
+                    ) {
+                        Text("Retry", color = White)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { viewModel.useDemoCenters() }
+                    ) {
+                        Text("Use Pre-saved Locations")
+                    }
+                }
+            )
+        }
+        
         // Bottom dialog for disposal center details with expand vertically animation
         AnimatedVisibility(
             visible = showDialog && selectedCenter != null,

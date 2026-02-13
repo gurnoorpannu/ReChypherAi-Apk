@@ -20,7 +20,8 @@ data class MapUiState(
     val centers: List<RecycleCenter> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val errorType: ErrorType? = null
+    val errorType: ErrorType? = null,
+    val showTimeoutDialog: Boolean = false
 )
 
 enum class ErrorType {
@@ -99,15 +100,23 @@ class MapViewModel : ViewModel() {
                 
                 val (errorMessage, errorType) = categorizeError(e)
                 
+                // Show dialog for timeout and network errors, auto-fallback for others
+                val shouldShowDialog = errorType == ErrorType.TIMEOUT_ERROR || 
+                                      errorType == ErrorType.NETWORK_ERROR ||
+                                      errorType == ErrorType.SERVER_ERROR
+                
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = errorMessage,
-                    errorType = errorType
+                    errorType = errorType,
+                    showTimeoutDialog = shouldShowDialog
                 )
                 
-                // Fallback to demo data if API fails
-                Log.d(TAG, "Falling back to demo data")
-                loadDemoCenters()
+                // Only auto-fallback for non-critical errors
+                if (!shouldShowDialog) {
+                    Log.d(TAG, "Auto-falling back to demo data for non-critical error")
+                    loadDemoCenters()
+                }
             }
         }
     }
@@ -140,6 +149,22 @@ class MapViewModel : ViewModel() {
                 )
             }
         }
+    }
+    
+    fun dismissTimeoutDialog() {
+        _uiState.value = _uiState.value.copy(showTimeoutDialog = false)
+    }
+    
+    fun useDemoCenters() {
+        Log.d(TAG, "User chose to use demo centers")
+        dismissTimeoutDialog()
+        loadDemoCenters()
+    }
+    
+    fun retryLoadCenters(latitude: Double, longitude: Double, limit: Int = 10) {
+        Log.d(TAG, "User chose to retry loading centers")
+        dismissTimeoutDialog()
+        loadNearestCenters(latitude, longitude, limit)
     }
     
     /**
