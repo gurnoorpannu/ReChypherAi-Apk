@@ -13,8 +13,7 @@ data class ChatMessage(
 )
 
 class ChatViewModel : ViewModel() {
-    private val apiService = GeminiApiService.create()
-    private val apiKey = "AIzaSyCEpS6GrFmRZq0QzaM3mYGjIQ1RiNkB5r8"
+    private val apiService = RecypherApiService.create()
     
     val messages = mutableStateListOf<ChatMessage>()
     var isLoading = false
@@ -49,46 +48,38 @@ class ChatViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                val systemPrompt = "You are a helpful waste management assistant. " +
-                        "Only answer questions related to waste, recycling, trash disposal, " +
-                        "composting, and environmental sustainability. " +
-                        "Keep your responses concise and helpful."
+                // Call the Render backend API for waste classification
+                val request = ClassifyWasteRequest(prompt = userMessage)
+                val response = apiService.classifyWaste(request)
                 
-                val request = GeminiRequest(
-                    contents = listOf(
-                        GeminiContent(
-                            parts = listOf(
-                                GeminiPart(text = "$systemPrompt\n\nUser question: $userMessage")
-                            )
-                        )
-                    )
-                )
+                // Display the result field from the backend response
+                messages.add(ChatMessage(response.result, false))
                 
-                val response = apiService.generateContent(apiKey, request)
-                
-                if (response.isSuccessful) {
-                    val aiResponse = response.body()?.candidates?.firstOrNull()
-                        ?.content?.parts?.firstOrNull()?.text
-                        ?: "Sorry, I couldn't generate a response."
-                    
-                    messages.add(ChatMessage(aiResponse, false))
-                } else {
-                    val errorBody = response.errorBody()?.string() ?: "Unknown error"
-                    messages.add(
-                        ChatMessage(
-                            "API Error (${response.code()}): $errorBody",
-                            false
-                        )
-                    )
-                }
             } catch (e: Exception) {
                 e.printStackTrace()
-                messages.add(
-                    ChatMessage(
-                        "Sorry, I encountered an error: ${e.message ?: "Unknown error"}. Please try again.",
-                        false
-                    )
-                )
+                
+                val errorMessage = when {
+                    e is java.net.UnknownHostException || e is java.net.ConnectException -> {
+                        "🌐 No internet connection. Please check your network and try again."
+                    }
+                    e is java.net.SocketTimeoutException -> {
+                        "⏱️ Request timed out. The server is taking too long to respond. Please try again."
+                    }
+                    e.message?.contains("HTTP 500", ignoreCase = true) == true -> {
+                        "🔧 Server error. Our AI service is temporarily unavailable. Please try again in a moment."
+                    }
+                    e.message?.contains("HTTP 429", ignoreCase = true) == true -> {
+                        "⚠️ Too many requests. Please wait a moment before trying again."
+                    }
+                    e.message?.contains("HTTP 404", ignoreCase = true) == true -> {
+                        "❌ Service not found. Please contact support if this persists."
+                    }
+                    else -> {
+                        "❌ Sorry, something went wrong: ${e.message ?: "Unknown error"}. Please try again."
+                    }
+                }
+                
+                messages.add(ChatMessage(errorMessage, false))
             } finally {
                 isLoading = false
             }
