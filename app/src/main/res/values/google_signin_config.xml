@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 
+    IMPORTANT: This is a placeholder Web Client ID.
+    You MUST replace this with your actual Web Client ID from Firebase Console:
+    1. Go to Firebase Console → Authentication → Sign-in method
+    2. Enable Google Sign-In
+    3. Copy the Web client ID
+    4. Replace the value below OR update your google-services.json with the oauth_client configuration
+    -->
+    <string name="default_web_client_id" translatable="false">946993474832-srgi8b2hgravo4slmkg2lushiuvd7vbo.apps.googleusercontent.com</string>
+</resources>

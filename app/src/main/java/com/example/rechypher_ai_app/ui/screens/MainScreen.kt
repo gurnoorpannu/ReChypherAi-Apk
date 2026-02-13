@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -12,12 +13,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rechypher_ai_app.ui.functions.BottomNavBar
+import com.example.rechypher_ai_app.viewmodel.AuthViewModel
 import com.example.rechypher_ai_app.viewmodel.ScanHistoryViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(authViewModel: AuthViewModel) {
     var selectedScreen by remember { mutableStateOf(0) }
     var navigateToNearestCenter by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
     
     // Shared ViewModel for scan history
     val scanHistoryViewModel: ScanHistoryViewModel = viewModel()
@@ -37,7 +41,10 @@ fun MainScreen() {
                 .padding(bottom = 80.dp)
         ) {
             when (selectedScreen) {
-                0 -> HomeScreen(scanHistoryViewModel = scanHistoryViewModel)
+                0 -> HomeScreen(
+                    scanHistoryViewModel = scanHistoryViewModel,
+                    authViewModel = authViewModel
+                )
                 1 -> MapScreen(navigateToNearest = navigateToNearestCenter)
                 2 -> CameraScreen(
                     onBackClick = { selectedScreen = 0 },
