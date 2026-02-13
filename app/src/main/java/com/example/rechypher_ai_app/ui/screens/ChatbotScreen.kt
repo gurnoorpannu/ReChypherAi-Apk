@@ -110,6 +110,8 @@ fun ChatbotScreen(
                     placeholder = { Text("Ask about waste management...") },
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
                         focusedBorderColor = Color(0xFF7BA589),
                         unfocusedBorderColor = Color(0xFFE0E0E0)
                     ),
