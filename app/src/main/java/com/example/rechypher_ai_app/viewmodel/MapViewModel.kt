@@ -5,12 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.rechypher_ai_app.data.RecycleCenter
 import com.example.rechypher_ai_app.data.RecypherApiService
-import com.example.rechypher_ai_app.data.ClassifyWasteRequest
-import com.example.rechypher_ai_app.data.ClassifyWasteResponse
+import com.example.rechypher_ai_app.data.GeminiApiService
+import com.example.rechypher_ai_app.data.GeminiApiException
+import com.example.rechypher_ai_app.data.LocationData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 data class MapUiState(
     val centers: List<RecycleCenter> = emptyList(),
@@ -30,6 +34,7 @@ enum class ErrorType {
 class MapViewModel : ViewModel() {
     
     private val apiService = RecypherApiService.create()
+    private val geminiService = GeminiApiService.getInstance()
     
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
@@ -109,14 +114,14 @@ class MapViewModel : ViewModel() {
     
     private fun categorizeError(exception: Exception): Pair<String, ErrorType> {
         return when {
-            exception is java.net.UnknownHostException || 
-            exception is java.net.ConnectException -> {
+            exception is UnknownHostException ||
+            exception is ConnectException -> {
                 Pair(
                     "No internet connection. Showing demo locations.",
                     ErrorType.NETWORK_ERROR
                 )
             }
-            exception is java.net.SocketTimeoutException -> {
+            exception is SocketTimeoutException -> {
                 Pair(
                     "Request timed out. Server might be slow. Showing demo locations.",
                     ErrorType.TIMEOUT_ERROR
@@ -137,12 +142,28 @@ class MapViewModel : ViewModel() {
         }
     }
     
-    suspend fun classifyWaste(prompt: String): ClassifyWasteResponse? {
+    /**
+     * Classifies waste using Gemini API directly
+     * Returns the classification result or null on error
+     */
+    suspend fun classifyWaste(prompt: String): String? {
         Log.d(TAG, "classifyWaste called with prompt: $prompt")
         return try {
-            val response = apiService.classifyWaste(ClassifyWasteRequest(prompt))
-            Log.d(TAG, "Waste classification successful: ${response.result}")
+            // Use Gemini API directly instead of backend
+            val systemPrompt = """You are a waste classification expert. Analyze the user's input and classify it into one of these categories:
+            - Recyclable (plastic, paper, metal, glass)
+            - Organic/Food Waste (food scraps, yard waste)
+            - Hazardous (batteries, chemicals, electronics)
+            - General Waste (non-recyclable items)
+            
+            Respond with just the category name and a brief 1-2 sentence explanation.""".trimIndent()
+            
+            val response = geminiService.generateContent(prompt, systemPrompt)
+            Log.d(TAG, "Waste classification successful: $response")
             response
+        } catch (e: GeminiApiException) {
+            Log.e(TAG, "Waste classification failed: ${e.message}", e)
+            null
         } catch (e: Exception) {
             Log.e(TAG, "Waste classification failed: ${e.message}", e)
             null
@@ -158,7 +179,7 @@ class MapViewModel : ViewModel() {
                 name = "Patiala Waste Disposal Center",
                 address = "Patiala, Punjab, India",
                 acceptedMaterials = listOf("Plastic", "Paper", "Metal", "Glass"),
-                location = com.example.rechypher_ai_app.data.LocationData(
+                location = LocationData(
                     coordinates = listOf(76.3737, 30.3522)
                 )
             ),
@@ -166,7 +187,7 @@ class MapViewModel : ViewModel() {
                 name = "Green Recycling Hub Patiala",
                 address = "Patiala, Punjab, India",
                 acceptedMaterials = listOf("E-waste", "Plastic", "Paper"),
-                location = com.example.rechypher_ai_app.data.LocationData(
+                location = LocationData(
                     coordinates = listOf(76.3850, 30.3400)
                 )
             ),
@@ -174,7 +195,7 @@ class MapViewModel : ViewModel() {
                 name = "Eco Waste Management",
                 address = "Patiala, Punjab, India",
                 acceptedMaterials = listOf("Organic", "Plastic", "Paper"),
-                location = com.example.rechypher_ai_app.data.LocationData(
+                location = LocationData(
                     coordinates = listOf(76.3600, 30.3650)
                 )
             ),
@@ -182,7 +203,7 @@ class MapViewModel : ViewModel() {
                 name = "Clean Punjab Initiative",
                 address = "Patiala, Punjab, India",
                 acceptedMaterials = listOf("Metal", "Glass", "Plastic"),
-                location = com.example.rechypher_ai_app.data.LocationData(
+                location = LocationData(
                     coordinates = listOf(76.3900, 30.3300)
                 )
             ),
@@ -190,7 +211,7 @@ class MapViewModel : ViewModel() {
                 name = "Sustainable Waste Center",
                 address = "Patiala, Punjab, India",
                 acceptedMaterials = listOf("Hazardous", "E-waste", "Battery"),
-                location = com.example.rechypher_ai_app.data.LocationData(
+                location = LocationData(
                     coordinates = listOf(76.3500, 30.3700)
                 )
             )

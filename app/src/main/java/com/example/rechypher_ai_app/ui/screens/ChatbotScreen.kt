@@ -25,6 +25,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.rechypher_ai_app.R
 import com.example.rechypher_ai_app.viewmodel.ChatViewModel
+import android.widget.TextView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import io.noties.markwon.Markwon
+import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
+import io.noties.markwon.ext.tables.TablePlugin
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -203,12 +209,35 @@ fun ChatBubble(message: com.example.rechypher_ai_app.viewmodel.ChatMessage) {
                 bottomEnd = if (message.isUser) 4.dp else 16.dp
             )
         ) {
-            Text(
-                text = message.text,
-                modifier = Modifier.padding(12.dp),
-                color = if (message.isUser) Color.White else Color.Black,
-                fontSize = 14.sp
-            )
+            if (message.isUser) {
+                Text(
+                    text = message.text,
+                    modifier = Modifier.padding(12.dp),
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+            } else {
+                val context = LocalContext.current
+                val markwon = remember {
+                    Markwon.builder(context)
+                        .usePlugin(StrikethroughPlugin.create())
+                        .usePlugin(TablePlugin.create(context))
+                        .build()
+                }
+                AndroidView<TextView>(
+                    factory = { ctx ->
+                        TextView(ctx).apply {
+                            setTextColor(android.graphics.Color.BLACK)
+                            textSize = 14f
+                            setPadding(12, 12, 12, 12)
+                        }
+                    },
+                    update = { textView ->
+                        markwon.setMarkdown(textView, message.text)
+                    },
+                    modifier = Modifier.widthIn(max = 280.dp)
+                )
+            }
         }
     }
 }

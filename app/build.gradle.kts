@@ -4,6 +4,18 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+import java.util.Properties
+
+// Load API keys from local.properties
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
+}
+
+val geminiApiKey: String = localProperties.getProperty("gemini.api.key", "") ?: ""
+
 android {
     namespace = "com.example.rechypher_ai_app"
     compileSdk {
@@ -18,6 +30,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Expose Gemini API key to BuildConfig
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {
@@ -38,6 +53,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -68,6 +84,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.gson)
+    implementation("io.noties.markwon:core:4.6.2")
+    implementation("io.noties.markwon:ext-strikethrough:4.6.2")
+    implementation("io.noties.markwon:ext-tables:4.6.2")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

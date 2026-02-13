@@ -3,8 +3,12 @@ package com.example.rechypher_ai_app.viewmodel
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.rechypher_ai_app.data.*
+import com.example.rechypher_ai_app.data.GeminiApiException
+import com.example.rechypher_ai_app.data.GeminiApiService
 import kotlinx.coroutines.launch
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 data class ChatMessage(
     val text: String,
@@ -13,7 +17,7 @@ data class ChatMessage(
 )
 
 class ChatViewModel : ViewModel() {
-    private val apiService = RecypherApiService.create()
+    private val geminiService = GeminiApiService.getInstance()
     
     val messages = mutableStateListOf<ChatMessage>()
     var isLoading = false
@@ -48,31 +52,45 @@ class ChatViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                // Call the Render backend API for waste classification
-                val request = ClassifyWasteRequest(prompt = userMessage)
-                val response = apiService.classifyWaste(request)
+                // Call Gemini API directly
+                val response = geminiService.generateContent(userMessage)
+                messages.add(ChatMessage(response, false))
                 
-                // Display the result field from the backend response
-                messages.add(ChatMessage(response.result, false))
-                
-            } catch (e: Exception) {
-                e.printStackTrace()
-                
-                val errorMessage = when {
-                    e is java.net.UnknownHostException || e is java.net.ConnectException -> {
-                        "🌐 No internet connection. Please check your network and try again."
+            } catch (e: GeminiApiException) {
+                val errorMessage = when (e) {
+                    is GeminiApiException.ApiKeyMissing -> {
+                        "🔐 API key not configured. Please contact support."
                     }
-                    e is java.net.SocketTimeoutException -> {
-                        "⏱️ Request timed out. The server is taking too long to respond. Please try again."
+                    is GeminiApiException.NetworkError -> {
+                        "🌐 ${e.message}"
                     }
-                    e.message?.contains("HTTP 500", ignoreCase = true) == true -> {
-                        "🔧 Server error. Our AI service is temporarily unavailable. Please try again in a moment."
+                    is GeminiApiException.TimeoutError -> {
+                        "⏱️ Request timed out. The AI service is taking too long. Please try again."
                     }
-                    e.message?.contains("HTTP 429", ignoreCase = true) == true -> {
+                    is GeminiApiException.RateLimitExceeded -> {
                         "⚠️ Too many requests. Please wait a moment before trying again."
                     }
-                    e.message?.contains("HTTP 404", ignoreCase = true) == true -> {
-                        "❌ Service not found. Please contact support if this persists."
+                    is GeminiApiException.InvalidRequest -> {
+                        "❌ Invalid request: ${e.message}. Please try rephrasing your question."
+                    }
+                    is GeminiApiException.ServerError -> {
+                        "🔧 ${e.message}. Our AI service is temporarily unavailable. Please try again in a moment."
+                    }
+                    is GeminiApiException.UnknownError -> {
+                        "❌ Sorry, something went wrong: ${e.message}. Please try again."
+                    }
+                }
+                
+                messages.add(ChatMessage(errorMessage, false))
+            } catch (e: Exception) {
+                // Handle any unexpected exceptions
+                e.printStackTrace()
+                val errorMessage = when {
+                    e is UnknownHostException || e is ConnectException -> {
+                        "🌐 No internet connection. Please check your network and try again."
+                    }
+                    e is SocketTimeoutException -> {
+                        "⏱️ Request timed out. Please try again."
                     }
                     else -> {
                         "❌ Sorry, something went wrong: ${e.message ?: "Unknown error"}. Please try again."
