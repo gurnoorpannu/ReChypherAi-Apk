@@ -39,10 +39,14 @@ import java.util.*
 
 @Composable
 fun HomeScreen(
-    scanHistoryViewModel: ScanHistoryViewModel
+    scanHistoryViewModel: ScanHistoryViewModel,
+    authViewModel: com.example.rechypher_ai_app.viewmodel.AuthViewModel
 ) {
     // Observe scan history from ViewModel
     val scanHistory by scanHistoryViewModel.scanHistory.collectAsState()
+    
+    // Observe auth state to get user info
+    val authState by authViewModel.authState.collectAsState()
     
     // Calculate total carbon saved
     val totalCarbonSaved = remember(scanHistory) {
@@ -64,7 +68,10 @@ fun HomeScreen(
             // Header Card with real carbon data
             HeaderCard(
                 totalCarbonSaved = totalCarbonSaved,
-                wasteStats = wasteStats
+                wasteStats = wasteStats,
+                userName = authState.user?.displayName ?: "User",
+                userInitials = authState.user?.displayName?.split(" ")?.mapNotNull { it.firstOrNull() }?.take(2)?.joinToString("") ?: "U",
+                authViewModel = authViewModel
             )
 
             // History Section
@@ -135,7 +142,10 @@ fun HomeScreen(
 @Composable
 fun HeaderCard(
     totalCarbonSaved: Double,
-    wasteStats: com.example.rechypher_ai_app.viewmodel.WasteStats
+    wasteStats: com.example.rechypher_ai_app.viewmodel.WasteStats,
+    userName: String,
+    userInitials: String,
+    authViewModel: com.example.rechypher_ai_app.viewmodel.AuthViewModel
 ) {
     Box(
         modifier = Modifier
@@ -170,7 +180,7 @@ fun HeaderCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "JW",
+                            text = userInitials,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
@@ -178,7 +188,7 @@ fun HeaderCard(
                     }
                     Column {
                         Text(
-                            text = "Jenny Wilson",
+                            text = userName,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp,
                             color = Color(0xFF1F1F1F)
@@ -190,10 +200,10 @@ fun HeaderCard(
                         )
                     }
                 }
-                IconButton(onClick = { }) {
+                IconButton(onClick = { authViewModel.signOut() }) {
                     Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifications",
+                        imageVector = Icons.Default.ExitToApp,
+                        contentDescription = "Sign Out",
                         tint = Color(0xFF374151)
                     )
                 }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "946993474832",
+    "project_id": "recypher-ai",
+    "storage_bucket": "recypher-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:946993474832:android:f46f3262ebb23b11f20995",
+        "android_client_info": {
+          "package_name": "com.example.rechypher_ai_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdHiYz5ouJYSQmpZqxyfb73Xkn0sx2FR8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
